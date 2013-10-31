@@ -22,16 +22,15 @@ def calcLums(ser):
         tmpRead = float(ser.readline().strip())
         aveRes += tmpRead
 
-    averes = aveRes/10
+    averes = round(aveRes/10,2)
     ## calculate the voltage of the input
-    voltage = 5.0 * (aveRes / 1024.0)
+    #voltage = 5.0 * (aveRes / 1024.0)
     ## calc the voltage divider
-    resistance = (10.0 * 5.0) / voltage - 10.0
+    #resistance = (10.0 * 5.0) / voltage - 10.0
     ## calc the intensity in lux
-    illuminance = 255.84 * pow(resistance, -10/9)
+    #illuminance = 255.84 * pow(resistance, -10/9)
 
-    return illuminance 
-
+    return str(averes)
 
 class App():
     def __init__(self):
@@ -63,8 +62,8 @@ class App():
                 line = ser.readline().strip()
                 dets = line.split(',')
                 if len(dets) >= 3:
-                    lineOut = str(datetime.now()) + "| Water Temp: " + dets[0] + "c | Out Humidity: " + dets[1] + "% | Ambient Temp: " + dets[2] + "c | In Humidity: " + dets[3] + "% | In Temp: " + dets[4] + "c | Light: " + calcLums(ser)
-                    t.statuses.update(status=str(lineOut))
+                    lineOut = str(datetime.now()) + "| Water: " + dets[0] + "c | Out Humidity: " + dets[1] + "%| Temp: " + dets[2] + "c | In Humidity: " + dets[3] + "%| Temp: " + dets[4] + "c | " + calcLums(ser)
+                    t.statuses.update(status=str(lineOut[:139]))
                     f.write(str(datetime.now()) + "," + line + "\n")
                     f.flush()
                 time.sleep(1800)
