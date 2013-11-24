@@ -6,7 +6,6 @@
 ### and Twitter Tools : https://pypi.python.org/pypi/twitter
 
 
-import glob
 import time
 import serial
 from daemon import runner
@@ -31,43 +30,57 @@ class App():
         self.stdin_path = '/dev/null'
         self.stdout_path = '/dev/tty'
         self.stderr_path = '/dev/tty'
-        self.pidfile_path =  '/tmp/pyroaquaMain.pid'
+        self.pidfile_path =  '/tmp/AquiPiMain.pid'
         self.pidfile_timeout = 5
     def run(self):
 
-        f = open('/mnt/winsvr/temps.csv','a')
-        sPort = "%s" % glob.glob("/dev/ttyACM*")
-        ser = serial.Serial(sPort.replace("'","").replace("[","").replace("]",""), 115200)
-        lineDupe = ''
-
+        locations=['/dev/ttyACM0', '/dev/ttyACM1','/dev/ttyACM2', '/dev/ttyACM3','/dev/ttyACM4', '/dev/ttyACM5', 'end']
         t = Twitter(
                     auth=OAuth(accesscodes.OAUTH_TOKEN, 
                         accesscodes.OAUTH_SECRET,
                         accesscodes.CONSUMER_KEY, 
                         accesscodes.CONSUMER_SECRET)
-                   )
+                    )
         t.statuses.home_timeline()
 
         while True:
             try:
-                ser.write('r')
-                # Put something in here to handle duplicate posts.
-                line = ser.readline().strip()
+                f = open('/mnt/winsvr/readingsTP.csv','a')
+                line = ""
+                # Find the correct USB Device, connect to it, send 'r' then read the results into a string.
+                for device in locations:
+                    try:
+                        #print "Trying...",device
+                        ser = serial.Serial(device, 115200, timeout = 60)
+                        ser.write('r')
+                        line = datetime.now().strftime("%d-%m-%Y %H:%M:%S") + "," + ser.readline().strip() + calcLums(ser)
+                        ser.close()
+                        break
+                    except:
+                        #print "Failed to connect on",device
+                        if device == 'end':
+                            line = "Unable to find Serial Port. Try again later"
+                            exit()
+                
                 dets = line.split(',')
-                if len(dets) >= 3:
-                    lineOut = str(datetime.now()) + "| Water: " + dets[0] + "c | Out Humidity: " + dets[1] + "%| Temp: " + dets[2] + "c | In Humidity: " + dets[3] + "%| Temp: " + dets[4] + "c | " + calcLums(ser)
+                if len(dets) == 8:
+                    lineOut = dets[0]
+                    lineOut += "| Water: " + dets[1] 
+                    lineOut += "c | Out Humidity: " + dets[2] 
+                    lineOut += "%| Temp: " + dets[3] 
+                    lineOut += "c | In Humidity: " + dets[4] 
+                    lineOut += "%| Temp: " + dets[5] 
+                    lineOut += "c | " + dets[7]
                     t.statuses.update(status=str(lineOut[:139]))
                     f.write(str(datetime.now()) + "," + line + "\n")
                     f.flush()
+
+                f.close()
                 time.sleep(1800)
             except Exception, e:
                 f.write('An error has occoured: %s \n' % str(e))
                 f.flush()
-                print 'An error has occoured: %s \n' % str(e)
-                sPort = "%s" % glob.glob("/dev/ttyACM*")
-                ser = serial.Serial(sPort.replace("'","").replace("[","").replace("]",""), 115200)
                 time.sleep(600)
-
 
 app = App()
 daemon_runner = runner.DaemonRunner(app)

@@ -13,7 +13,7 @@ class App():
         self.stdin_path = '/dev/null'
         self.stdout_path = '/dev/tty'
         self.stderr_path = '/dev/tty'
-        self.pidfile_path =  '/tmp/aquapiRR.pid'
+        self.pidfile_path =  '/tmp/AquaPiRR.pid'
         self.pidfile_timeout = 5
 
     def run(self):
@@ -26,45 +26,41 @@ class App():
         lineDupe = ''
 
         while True:
-            f = open('/mnt/winsvr/aquaponicLog.csv','a')
+            # Open the log file
+            f = open('/mnt/winsvr/readingsRR.csv','a')
             try:
                 line = ""
+                # Find the correct USB Device, connect to it, send 'r' then read the results into a string.
                 for device in locations:
                     try:
                         #print "Trying...",device
                         ser = serial.Serial(device, 115200, timeout = 60)
                         ser.write('r')
-                        line = str(datetime.now()) + "," + ser.readline().strip()
+                        line = datetime.now().strftime("%d-%m-%Y %H:%M:%S") + "," + ser.readline().strip()
                         ser.close()
                         break
                     except:
                         #print "Failed to connect on",device
                         if device == 'end':
-                            print "Unable to find Serial Port."
+                            line = "Unable to find Serial Port. Try again later"
                             exit()
-
+                # Write the string to the log file
                 f.write(line + "\n")
                 f.flush()
+
                 #App.AddToDatabase(line)
                 # Put this in a seperate function later
                 aLine = line.split(',')
-                print "Line Count: %d", len(aLine)
                 if len(aLine) == 8:
-                    TimeStamp = aLine[0]  # Timestamp
-                    WaterTemp = aLine[1]  # WaterTemp
-                    OutHumid = aLine[2]  # Out Humid
-                    OutTemp = aLine[3]  # Out Temp
-                    InHumid = aLine[4]  # In Humid
-                    InTemp = aLine[5]  # In Temp
-                    Lux = aLine[6]  # Lux
-
-                    data_reading = (TimeStamp, WaterTemp, OutTemp, OutHumid, InTemp, InHumid, Lux)
-
+                    # Timestamp, WaterTemp, Out Temp, Out Humid, In Temp, In Humid, Lux
+                    data_reading = (aLine[0], aLine[1], aLine[3], aLine[2], aLine[5], aLine[4], aLine[6])
+                    # Connect to the database
                     cnx = mysql.connector.connect(host=accesscodes.DATABASE_HOST,
                                                 database=accesscodes.DATABASE_NAME,
                                                 user=accesscodes.DATABASE_USER,
                                                 password=accesscodes.DATABASE_PASS)
                     cursor = cnx.cursor()
+                    # Write to the database
                     cursor.execute(add_reading, data_reading)
                     # Make sure data is committed to the database
                     cnx.commit()
@@ -81,7 +77,6 @@ class App():
                 time.sleep(600)
 
 #    def AddToDatabase(line):
-
 
 app = App()
 daemon_runner = runner.DaemonRunner(app)
