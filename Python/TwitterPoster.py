@@ -23,12 +23,6 @@ def calcLums(ser):
         aveRes += tmpRead
 
     averes = round(aveRes/10,2)
-    ## calculate the voltage of the input
-    #voltage = 5.0 * (aveRes / 1024.0)
-    ## calc the voltage divider
-    #resistance = (10.0 * 5.0) / voltage - 10.0
-    ## calc the intensity in lux
-    #illuminance = 255.84 * pow(resistance, -10/9)
 
     return str(averes)
 
@@ -42,15 +36,15 @@ class App():
     def run(self):
 
         f = open('/mnt/winsvr/temps.csv','a')
-        ##f.write('Time,\tType,\tstatus,\tHumidity (%),\tTemperature (C)\n')
         sPort = "%s" % glob.glob("/dev/ttyACM*")
         ser = serial.Serial(sPort.replace("'","").replace("[","").replace("]",""), 115200)
         lineDupe = ''
 
-
         t = Twitter(
-                    auth=OAuth(accesscodes.OAUTH_TOKEN, accesscodes.OAUTH_SECRET,
-                               accesscodes.CONSUMER_KEY, accesscodes.CONSUMER_SECRET)
+                    auth=OAuth(accesscodes.OAUTH_TOKEN, 
+                        accesscodes.OAUTH_SECRET,
+                        accesscodes.CONSUMER_KEY, 
+                        accesscodes.CONSUMER_SECRET)
                    )
         t.statuses.home_timeline()
 
@@ -58,7 +52,6 @@ class App():
             try:
                 ser.write('r')
                 # Put something in here to handle duplicate posts.
-                
                 line = ser.readline().strip()
                 dets = line.split(',')
                 if len(dets) >= 3:
@@ -70,6 +63,7 @@ class App():
             except Exception, e:
                 f.write('An error has occoured: %s \n' % str(e))
                 f.flush()
+                print 'An error has occoured: %s \n' % str(e)
                 sPort = "%s" % glob.glob("/dev/ttyACM*")
                 ser = serial.Serial(sPort.replace("'","").replace("[","").replace("]",""), 115200)
                 time.sleep(600)
