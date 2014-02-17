@@ -2,7 +2,7 @@
 import mysql.connector
 import accesscodes
 
-file = open('/mnt/winsvr/temps.csv', 'r')
+file = open('/mnt/winsvr/readingsRR.csv', 'r')
 cnx = mysql.connector.connect(host=accesscodes.DATABASE_HOST,
                             database=accesscodes.DATABASE_NAME,
                             user=accesscodes.DATABASE_USER,
@@ -30,7 +30,8 @@ for line in file:
         OutTemp = aLine[3]  # Out Temp
         InHumid = aLine[4]  # In Humid
         InTemp = aLine[5]  # In Temp
-        Lux = aLine[6]  # Lux
+        Lux2 = aLine[6]  # Lux
+        Lux = aLine[7]  # Lux
 
         data_reading = (TimeStamp, WaterTemp, OutTemp, OutHumid, InTemp, InHumid, Lux)
 

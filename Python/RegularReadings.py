@@ -19,8 +19,8 @@ class App():
     def run(self):
 
         add_reading = ("INSERT INTO readings "
-               "(CreateDate, WaterTemp, OutsideTemp, OutsideHumidity, InsideTemp, InsideHumidity, Lux) "
-               "VALUES (%s, %s, %s, %s, %s, %s, %s)")
+               "(CreateDate, WaterTemp, OutsideTemp, OutsideHumidity, InsideTemp, InsideHumidity, Lux, Lux2) "
+               "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)")
         locations=['/dev/ttyACM0', '/dev/ttyACM1','/dev/ttyACM2', '/dev/ttyACM3','/dev/ttyACM4', '/dev/ttyACM5', 'end']
 
         lineDupe = ''
@@ -53,7 +53,7 @@ class App():
                 aLine = line.split(',')
                 if len(aLine) == 8:
                     # Timestamp, WaterTemp, Out Temp, Out Humid, In Temp, In Humid, Lux
-                    data_reading = (aLine[0], aLine[1], aLine[3], aLine[2], aLine[5], aLine[4], aLine[6])
+                    data_reading = (str(datetime.now()), aLine[1], aLine[3], aLine[2], aLine[5], aLine[4], aLine[7], aLine[6])
                     # Connect to the database
                     cnx = mysql.connector.connect(host=accesscodes.DATABASE_HOST,
                                                 database=accesscodes.DATABASE_NAME,
