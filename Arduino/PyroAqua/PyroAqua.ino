@@ -9,12 +9,13 @@
 
 dht DHT;
 dht DHT2;
-int led = 8;
+int led = 2;
 
-#define DHT22_PIN 11
-#define DHT22_PIN2 12
-#define ONE_WIRE_BUS 9
-#define LRD_PIN 10
+#define DHT22_PIN 4
+#define DHT22_PIN2 3
+#define ONE_WIRE_BUS 5
+#define LRD_PIN 0
+#define LRD_PIN_2 1
 
 // Setup a oneWire instance to communicate with any OneWire devices
 OneWire oneWire(ONE_WIRE_BUS);
@@ -33,16 +34,16 @@ void setup()
 
 }
 
-void loop()
+void printTemperature(DeviceAddress deviceAddress)
 {
-    handleSerialCommunication();
-    //delays
-    delay(1000);
-    //delay(3000); // 3 seconds
-    //delay(600000); //10 minutes
-    //delay(3600000);//1 hour
+    float tempC = sensors.getTempC(deviceAddress);
+    if (tempC == -127.00) {
+        Serial.print("Error getting temperature");
+    } else {
+        //Serial.print("C: ");
+        Serial.print(tempC);
+    }
 }
-
 void handleSerialCommunication(void) {
     if (Serial.available() > 0 )
     {
@@ -71,7 +72,9 @@ void handleSerialCommunication(void) {
             Serial.print(DHT2.temperature, 1);
             Serial.print(",");
             Serial.print(analogRead(LRD_PIN));
-            Serial.println(",");
+            Serial.print(",");
+            Serial.print(analogRead(LRD_PIN_2));
+            Serial.println(" ");
             //Turn the LED off
             digitalWrite(led, LOW);
             break;
@@ -98,19 +101,22 @@ void handleSerialCommunication(void) {
          case 'f':
             Serial.println(analogRead(LRD_PIN));
             break;
+         case 'g':
+            Serial.println(analogRead(LRD_PIN_2));
+            break;
         }
     } 
 }
 
-void printTemperature(DeviceAddress deviceAddress)
+
+void loop()
 {
-    float tempC = sensors.getTempC(deviceAddress);
-    if (tempC == -127.00) {
-        Serial.print("Error getting temperature");
-    } else {
-        //Serial.print("C: ");
-        Serial.print(tempC);
-    }
+    handleSerialCommunication();
+    //delays
+    delay(1000);
+    //delay(3000); // 3 seconds
+    //delay(600000); //10 minutes
+    //delay(3600000);//1 hour
 }
 //
 // END OF FILE

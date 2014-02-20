@@ -5,6 +5,7 @@ import serial
 import mysql.connector
 import accesscodes
 from datetime import datetime
+from twitter import *
 
 # This function polls the Arduino to get the readings.
 def get_the_temps():
@@ -55,34 +56,70 @@ def error_log(e):
     log.close()
 
 # INSERT the details to the LIVE database
-def insert_to_db(line):
+def insert_to_db(aLine):
     try:
         add_reading = ("INSERT INTO readings "
                "(CreateDate, WaterTemp, OutsideTemp, OutsideHumidity, InsideTemp, InsideHumidity, Lux, Lux2) "
                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)")
-        aLine = line.split(',')
-        if len(aLine) == 8:
-            # Timestamp, WaterTemp, Out Temp, Out Humid, In Temp, In Humid, Lux
-            data_reading = (str(datetime.now()), aLine[1], aLine[3], aLine[2], aLine[5], aLine[4], aLine[7], aLine[6])
-            # Connect to the database
-            cnx = mysql.connector.connect(host=accesscodes.DATABASE_HOST,
-                                        database=accesscodes.DATABASE_NAME,
-                                        user=accesscodes.DATABASE_USER,
-                                        password=accesscodes.DATABASE_PASS)
-            cursor = cnx.cursor()
-            # Write to the database
-            cursor.execute(add_reading, data_reading)
-            # Make sure data is committed to the database
-            cnx.commit()
-            # Clean up
-            cursor.close()
-            cnx.close()
+        # Timestamp, WaterTemp, Out Temp, Out Humid, In Temp, In Humid, Lux
+        data_reading = (str(datetime.now()), aLine[1], aLine[3], aLine[2], aLine[5], aLine[4], aLine[7], aLine[6])
+        # Connect to the database
+        cnx = mysql.connector.connect(host=accesscodes.DATABASE_HOST,
+                                    database=accesscodes.DATABASE_NAME,
+                                    user=accesscodes.DATABASE_USER,
+                                    password=accesscodes.DATABASE_PASS)
+        cursor = cnx.cursor()
+        # Write to the database
+        cursor.execute(add_reading, data_reading)
+        # Make sure data is committed to the database
+        cnx.commit()
+        # Clean up
+        cursor.close()
+        cnx.close()
     except Exception, e:
         error_log(e)
 
+# Post to twitter
+def post_to_twitter(aLine):
+    try:
+        t = Twitter(
+                    auth=OAuth(accesscodes.OAUTH_TOKEN, 
+                        accesscodes.OAUTH_SECRET,
+                        accesscodes.CONSUMER_KEY, 
+                        accesscodes.CONSUMER_SECRET)
+                    )
+        t.statuses.home_timeline()
+
+        if len(aLine) == 8:
+            lineOut = aLine[0]
+            lineOut += "| Water: " + aLine[1] 
+            lineOut += "c | Out Humid: " + aLine[2] 
+            lineOut += "%| Temp: " + aLine[3] 
+            lineOut += "c | In Humid: " + aLine[4] 
+            lineOut += "%| Temp: " + aLine[5] 
+            lineOut += "c | "
+            if aLine[7] < 10:
+                lineOut += aLine[7]
+            else:
+                lineOut += aLine[6]
+            t.statuses.update(status=str(lineOut[:139]))
+    except Exception, e:
+        error_log(e)
+
+
 ##print "TEST"
 readings = get_the_temps()
+aLine = readings.split(',')
+## TODO: Put a loop in here to loop until aLine len is 8, but limit the number of loops
+
 ##print "Readings:", readings
 write_to_file_local(readings)
 write_to_file_svr(readings)
-insert_to_db(readings)
+
+if len(aLine) == 8:
+    insert_to_db(aLine)
+
+currentMin = datetime.now().strftime("%M")
+
+if currentMin == "30" or currentMin == "00" :
+    post_to_twitter(aLine)
